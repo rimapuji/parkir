@@ -13,6 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  *
@@ -36,6 +38,82 @@ public class Parkir extends javax.swing.JFrame {
         kembalian.setText("");
     }
 
+    public int hitungHarga(String type, int waktu){
+        int hasil = 0; 
+        if(type.equals("Motor")){
+            hasil += 5000 * waktu;
+            return hasil > 25000? 25000 : hasil;
+         }else{
+            hasil += 10000 * waktu;
+            return hasil > 25000? 25000 : hasil;
+         }
+    }
+    
+    public void buatStruk(String waktu, String platNomor, String type){
+         TextStruk.setText("");
+         String[] c = waktu.split(" ");
+         String harga = type.equals("Mobil")? "RP 10.000": "RP 5.000";
+         TextStruk.append("\n          PARKIRAN RIFSA - "+ type +"\n\n");
+         TextStruk.append("   Harga     : "+ harga+ "/Jam\n");
+         TextStruk.append("   No          : "+ platNomor +"\n");
+         TextStruk.append("   Tanggal : "+ c[0] +"\n");
+         TextStruk.append("   Waktu    : "+ c[1] +"\n\n");
+         TextStruk.append("       Jangan Meninggalkan Tiket dan\n");
+         TextStruk.append("            Barang Bawaan Anda");
+    }
+    
+    public void coba(String platNomor){
+        try {
+            // TODO add your handling code here:
+            if(platNomor.equals("Motor") || platNomor.equals("Mobil")){
+                TextStruk.setText("");
+                return;
+            }
+            LocalDateTime myDateObj = LocalDateTime.now();
+            DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+            String formattedDate = myDateObj.format(myFormatObj);
+            Connection connection = Koneksi.ConnectDB();
+            String query = "SELECT * FROM tb_parkir where platnomor='"+platNomor+"'";
+            Statement st = connection.createStatement();
+            ResultSet rs = st.executeQuery(query);
+            String waktu1 = null;
+            String type = null;
+            while(rs.next()){
+                waktu1 = rs.getString("waktu");
+                type = rs.getString("typeKendaraan");
+            }
+            String[] s = waktu1.split("[-: ]");
+            String[] f = formattedDate.split("[-: ]");
+            int jam = Integer.parseInt(f[3]) - Integer.parseInt(s[3]);
+            int menit = Integer.parseInt(f[4]) - Integer.parseInt(s[4]);
+            int detik = Integer.parseInt(f[5]) - Integer.parseInt(s[5]);
+            int tanggal = Integer.parseInt(f[0]) - Integer.parseInt(s[0]);           
+            st.close();
+            buatStruk(waktu1, platNomor, type);
+            if(waktu1 == null){
+                JOptionPane.showMessageDialog(null, "Invalid", "Error", JOptionPane.ERROR_MESSAGE);
+            }else{
+                
+                if(tanggal != 0){
+                    jam += tanggal * 24;
+                }else if(jam == 0){
+                    jam++;
+                }else{
+                      jam = jam * 60 + menit;
+                      System.out.println(jam);
+                      jam = (jam / 60 == 0)? 1 : jam/60;
+                }
+            }
+            int h = hitungHarga(type, jam);
+            PlatNomor2.setText(platNomor);
+            waktu.setText(String.valueOf(jam));
+            harga.setText(String.valueOf(h));
+          
+        } catch (SQLException ex) {
+            Logger.getLogger(Parkir.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -45,6 +123,7 @@ public class Parkir extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel3 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -60,11 +139,26 @@ public class Parkir extends javax.swing.JFrame {
         waktu = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
         Reset = new javax.swing.JButton();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        TextStruk = new javax.swing.JTextArea();
         jLabel1 = new javax.swing.JLabel();
         PlatNomor1 = new javax.swing.JTextField();
         ComboBoxType = new javax.swing.JComboBox<>();
-        jButton1 = new javax.swing.JButton();
+        btnSimpan = new javax.swing.JButton();
+        BtnDelete = new javax.swing.JButton();
+        btnCari = new javax.swing.JButton();
         jLabel7 = new javax.swing.JLabel();
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(255, 0, 255));
@@ -72,9 +166,9 @@ public class Parkir extends javax.swing.JFrame {
         jPanel1.setPreferredSize(new java.awt.Dimension(900, 500));
         jPanel1.setLayout(null);
 
-        jPanel2.setBackground(new java.awt.Color(204, 255, 255));
+        jPanel2.setBackground(new java.awt.Color(0, 153, 153));
 
-        jTable1.setBackground(new java.awt.Color(153, 153, 153));
+        jTable1.setBackground(new java.awt.Color(204, 204, 204));
         jTable1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -92,8 +186,6 @@ public class Parkir extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        jTable1.setGridColor(new java.awt.Color(204, 204, 204));
-        jTable1.setSelectionBackground(new java.awt.Color(204, 204, 204));
         jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable1MouseClicked(evt);
@@ -102,7 +194,7 @@ public class Parkir extends javax.swing.JFrame {
         jScrollPane1.setViewportView(jTable1);
 
         jLabel2.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel2.setText("PlatNomor");
+        jLabel2.setText("Plat Nomor");
 
         pembayaran.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -140,7 +232,8 @@ public class Parkir extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         jLabel6.setText("Waktu");
 
-        Reset.setBackground(new java.awt.Color(0, 153, 153));
+        Reset.setBackground(new java.awt.Color(102, 0, 0));
+        Reset.setForeground(new java.awt.Color(255, 255, 255));
         Reset.setText("Reset");
         Reset.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -150,13 +243,32 @@ public class Parkir extends javax.swing.JFrame {
                 ResetMousePressed(evt);
             }
         });
+        Reset.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ResetActionPerformed(evt);
+            }
+        });
+
+        TextStruk.setBackground(new java.awt.Color(204, 204, 204));
+        TextStruk.setColumns(20);
+        TextStruk.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        TextStruk.setRows(5);
+        TextStruk.setToolTipText("");
+        TextStruk.setAutoscrolls(false);
+        TextStruk.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        TextStruk.setMargin(new java.awt.Insets(40, 30, 30, 40));
+        TextStruk.setName(""); // NOI18N
+        TextStruk.setOpaque(false);
+        jScrollPane2.setViewportView(TextStruk);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 50, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -176,24 +288,28 @@ public class Parkir extends javax.swing.JFrame {
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addContainerGap(47, Short.MAX_VALUE)
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(PlatNomor2, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel6)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(waktu, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel3)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(harga, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel4)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(pembayaran, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel2)
+                        .addGap(12, 12, 12)
+                        .addComponent(PlatNomor2, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(waktu, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(harga, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(pembayaran, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 293, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 26, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel5)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -201,50 +317,78 @@ public class Parkir extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addComponent(Reset, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(43, 43, 43))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         jPanel1.add(jPanel2);
-        jPanel2.setBounds(0, 0, 612, 487);
+        jPanel2.setBounds(0, 0, 547, 487);
 
+        jLabel1.setBackground(new java.awt.Color(0, 153, 153));
         jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel1.setText("PlatNomor");
+        jLabel1.setText("Plat Nomor");
         jPanel1.add(jLabel1);
-        jLabel1.setBounds(640, 50, 78, 20);
+        jLabel1.setBounds(620, 120, 78, 30);
         jPanel1.add(PlatNomor1);
-        PlatNomor1.setBounds(640, 70, 212, 37);
+        PlatNomor1.setBounds(622, 146, 212, 37);
 
         ComboBoxType.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         ComboBoxType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select Type", "Motor", "Mobil" }));
         jPanel1.add(ComboBoxType);
-        ComboBoxType.setBounds(640, 120, 212, 35);
+        ComboBoxType.setBounds(622, 195, 212, 35);
 
-        jButton1.setBackground(new java.awt.Color(0, 153, 153));
-        jButton1.setText("Simpan");
-        jButton1.addMouseListener(new java.awt.event.MouseAdapter() {
+        btnSimpan.setBackground(new java.awt.Color(204, 204, 204));
+        btnSimpan.setText("Simpan");
+        btnSimpan.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jButton1MouseClicked(evt);
+                btnSimpanMouseClicked(evt);
             }
             public void mousePressed(java.awt.event.MouseEvent evt) {
-                jButton1MousePressed(evt);
+                btnSimpanMousePressed(evt);
             }
         });
-        jPanel1.add(jButton1);
-        jButton1.setBounds(640, 190, 212, 36);
+        btnSimpan.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSimpanActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnSimpan);
+        btnSimpan.setBounds(622, 242, 212, 36);
+
+        BtnDelete.setBackground(new java.awt.Color(255, 204, 204));
+        BtnDelete.setText("Delete");
+        BtnDelete.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                BtnDeleteMouseClicked(evt);
+            }
+        });
+        jPanel1.add(BtnDelete);
+        BtnDelete.setBounds(622, 290, 212, 37);
+
+        btnCari.setText("Cari");
+        btnCari.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnCariMouseClicked(evt);
+            }
+        });
+        jPanel1.add(btnCari);
+        btnCari.setBounds(622, 339, 212, 39);
 
         jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/Screenshot (210).png"))); // NOI18N
         jLabel7.setText("jLabel7");
         jPanel1.add(jLabel7);
-        jLabel7.setBounds(-200, 0, 1090, 490);
+        jLabel7.setBounds(-250, 0, 1140, 530);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 887, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 887, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
         );
 
         pack();
@@ -278,9 +422,9 @@ public class Parkir extends javax.swing.JFrame {
 
     }
     
-    private void jButton1MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MousePressed
+    private void btnSimpanMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSimpanMousePressed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1MousePressed
+    }//GEN-LAST:event_btnSimpanMousePressed
 
     private void hargaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hargaActionPerformed
         // TODO add your handling code here:
@@ -312,7 +456,7 @@ public class Parkir extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_pembayaranActionPerformed
 
-    private void jButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MouseClicked
+    private void btnSimpanMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSimpanMouseClicked
         try {
             // TODO add your handling code here:
             Connection koneksi = Koneksi.ConnectDB();
@@ -320,12 +464,15 @@ public class Parkir extends javax.swing.JFrame {
                 PlatNomor1.setText("");
                 JOptionPane.showMessageDialog(null, "invalid", "Error", JOptionPane.ERROR_MESSAGE);
             }else{
-                String sql = "INSERT INTO `tb_parkir`(`platnomor`, `typeKendaraan`) VALUES ("
+                LocalDateTime myDateObj = LocalDateTime.now();
+                DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+                String formattedDate = myDateObj.format(myFormatObj);
+                String sql = "INSERT INTO `tb_parkir`(`platnomor`, `typeKendaraan`, `waktu`) VALUES ("
                             + "'"+PlatNomor1.getText()+"'"
-                            + ",'"+ComboBoxType.getSelectedItem().toString()+"')";
+                            + ",'"+ComboBoxType.getSelectedItem().toString()+"','"+formattedDate+"')";
                 PreparedStatement preparedStmt = koneksi.prepareStatement(sql);
                 preparedStmt.execute();
-                JOptionPane.showMessageDialog(null, "Berhasil registrasi", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Berhasil ditambahkan", "Success", JOptionPane.INFORMATION_MESSAGE);
                 viewTable();
                 PlatNomor1.setText("");
                 ComboBoxType.setSelectedItem("Select Type");
@@ -334,11 +481,11 @@ public class Parkir extends javax.swing.JFrame {
             
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Invalid", "ERROR", JOptionPane.ERROR_MESSAGE);
-            PlatNomor1.setText("");
+            PlatNomor2.setText("");
             ComboBoxType.setSelectedItem("Select Type");
         }
         
-    }//GEN-LAST:event_jButton1MouseClicked
+    }//GEN-LAST:event_btnSimpanMouseClicked
 
     private void waktuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_waktuActionPerformed
         try {
@@ -379,6 +526,8 @@ public class Parkir extends javax.swing.JFrame {
 
     private void PlatNomor2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PlatNomor2ActionPerformed
         // TODO add your handling code here:
+         String plat = PlatNomor2.getText();
+         coba(plat);
     }//GEN-LAST:event_PlatNomor2ActionPerformed
 
     private void ResetMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ResetMouseClicked
@@ -390,11 +539,110 @@ public class Parkir extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_ResetMousePressed
 
+    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
+         // TODO add your handling code here:
+    }//GEN-LAST:event_btnSimpanActionPerformed
+
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
         // TODO add your handling code here:
-        String selectedCellValue = (String) jTable1.getValueAt(jTable1.getSelectedRow() , jTable1.getSelectedColumn());
-          PlatNomor2.setText(selectedCellValue);
+          String selectedCellValue = (String) jTable1.getValueAt(jTable1.getSelectedRow() , jTable1.getSelectedColumn());
+          coba(selectedCellValue);
     }//GEN-LAST:event_jTable1MouseClicked
+
+    private void BtnDeleteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_BtnDeleteMouseClicked
+        // TODO add your handling code here:
+        try {
+            // TODO add your handling code here:
+            Connection koneksi = Koneksi.ConnectDB();
+            String query = "SELECT * FROM tb_parkir where platnomor='"+PlatNomor1.getText()+"'";
+            Statement st = koneksi.createStatement();
+            ResultSet rs = st.executeQuery(query);
+            String platNomor = null;
+            while(rs.next()){
+                platNomor = rs.getString("platnomor");
+            }
+            st.close();
+            if(PlatNomor1.getText().isEmpty() || PlatNomor1.getText().isBlank()|| platNomor == null){
+                JOptionPane.showMessageDialog(null, "Invalid", "Error", JOptionPane.ERROR_MESSAGE);
+            }else{
+                String delete = "DELETE FROM `tb_parkir` WHERE platnomor='"+platNomor+"'";
+                PreparedStatement prs = koneksi.prepareStatement(delete);
+                prs.execute();
+                PlatNomor1.setText("");
+                viewTable();
+                TextStruk.setText("");
+                koneksi.close();
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Invalid", "ERROR", JOptionPane.ERROR_MESSAGE);
+            PlatNomor1.setText("");
+            ComboBoxType.setSelectedItem("Select Type");
+        }
+    }//GEN-LAST:event_BtnDeleteMouseClicked
+
+    private void btnCariMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCariMouseClicked
+        // TODO add your handling code here:
+         try {
+            Object[] columnTitle = {"PlatNomor","Type"};
+            tableModel = new DefaultTableModel(null,columnTitle);
+            jTable1.setModel(tableModel);
+            
+            Connection koneksi = Koneksi.ConnectDB();
+            Statement statement = koneksi.createStatement();
+            tableModel.getDataVector().removeAllElements();
+            
+            if((PlatNomor1.getText().isBlank() || PlatNomor1.getText().isEmpty()) && "Select Type".equals(ComboBoxType.getSelectedItem().toString())){
+                resultSet = statement.executeQuery("SELECT * FROM tb_parkir");
+                while(resultSet.next()){
+                    Object[] data = {
+                        resultSet.getString("platnomor"),
+                        resultSet.getString("typeKendaraan")
+                    };
+                    tableModel.addRow(data);
+                }
+                PlatNomor1.setText("");
+            }else if((PlatNomor1.getText().isEmpty() || PlatNomor1.getText().isBlank()) && !"Select Type".equals(ComboBoxType.getSelectedItem().toString())){
+                resultSet = statement.executeQuery("SELECT * FROM tb_parkir WHERE typeKendaraan='"+ComboBoxType.getSelectedItem().toString()+"'");
+                    while(resultSet.next()){
+                        Object[] data = {
+                            resultSet.getString("platnomor"),
+                            resultSet.getString("typeKendaraan")
+                        };
+                        tableModel.addRow(data);
+                    }
+                    ComboBoxType.setSelectedItem("Select Type");
+            }else if(PlatNomor1.getText() != null && "Select Type".equals(ComboBoxType.getSelectedItem().toString())){ 
+                  resultSet = statement.executeQuery("SELECT * FROM tb_parkir WHERE platnomor='"+PlatNomor1.getText()+"'");
+                    while(resultSet.next()){
+                        Object[] data = {
+                            resultSet.getString("platnomor"),
+                            resultSet.getString("typeKendaraan")
+                        };
+                        tableModel.addRow(data);
+                    }
+                    PlatNomor1.setText("");
+            }else{
+                resultSet = statement.executeQuery("SELECT * FROM tb_parkir WHERE platnomor='"+PlatNomor1.getText()+"' AND typeKendaraan='"+ComboBoxType.getSelectedItem().toString()+"'");
+                    while(resultSet.next()){
+                        Object[] data = {
+                            resultSet.getString("platnomor"),
+                            resultSet.getString("typeKendaraan")
+                        };
+                        tableModel.addRow(data);
+                    }
+                    PlatNomor1.setText("");
+                    ComboBoxType.setSelectedItem("Select Type");
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Invalid", "ERROR", JOptionPane.ERROR_MESSAGE);
+            PlatNomor1.setText("");
+            ComboBoxType.setSelectedItem("Select Type");
+        }
+    }//GEN-LAST:event_btnCariMouseClicked
+
+    private void ResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ResetActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_ResetActionPerformed
 
     /**
      * @param args the command line arguments
@@ -432,12 +680,15 @@ public class Parkir extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton BtnDelete;
     private javax.swing.JComboBox<String> ComboBoxType;
     private javax.swing.JTextField PlatNomor1;
     private javax.swing.JTextField PlatNomor2;
     private javax.swing.JButton Reset;
+    private javax.swing.JTextArea TextStruk;
+    private javax.swing.JButton btnCari;
+    private javax.swing.JButton btnSimpan;
     private javax.swing.JTextField harga;
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -447,7 +698,9 @@ public class Parkir extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable jTable1;
     private javax.swing.JTextField kembalian;
     private javax.swing.JTextField pembayaran;
